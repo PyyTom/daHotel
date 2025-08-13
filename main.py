@@ -3,7 +3,8 @@ db=sqlite3.connect('db.db')
 db.execute('create table if not exists ROOMS(FLOOR integer,ROOM integer,STATUS,PRICE)')
 db.execute('create table if not exists CLEANINGS(FLOOR integer,ROOM integer,DATE,TIME)')
 db.execute('create table if not exists GUESTS(FLOOR integer,ROOM integer,NAME,ID,CHECKIN,NIGHTS integer,BILL float)')
-db.execute('create table if not exists SERVICES(FLOOR integer,ROOM integer,SERVICE,PRICE float)')
+db.execute('create table if not exists SERVICES(FLOOR integer,ROOM integer,DATE,TIME,SERVICE,PRICE float)')
+db.execute('create table if not exists BILLS(FLOOR,ROOM,NAME,ID,CHECKIN,NIGHTS,AMOUNT)')
 db.close()
 from flet import *
 from pages.HOME import home_view
