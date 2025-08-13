@@ -1,39 +1,44 @@
 import sqlite3
 from flet import *
 def editor_view(page:Page,theme,alert):
-    def add_to_config(e):
+    def refresh(e):
         def remove(e):
-            e.control.parent.controls.remove(e.control)
-            page.update()
-        if t_floor.value=='' or t_rooms.value=='' or t_price.value=='':
-            alert.title=Text('EMPTY FIELDS')
-            page.open(alert)
-        else:
-            c_config.controls.append(Container(content=Row([Text(str(t_floor.value),width=100),Text(str(t_rooms.value),width=100),Text(str(t_price.value),width=100)],alignment=MainAxisAlignment.CENTER),on_click=remove))
-            t_floor.value,t_rooms.value,t_price.value=0,0,0.0
-        page.update()
-    def save(e):    
-        db=sqlite3.connect('db.db')
-        for c in c_config.controls:
-            print(c)
-            for t in c.content.controls:print(t)
-            data=[t.value for t in c.content.controls]
-            data.insert(2,'green')
-            db.execute('insert into ROOMS values(?,?,?,?)',data)
+            db=sqlite3.connect('db.db')
+            floor,price=e.control.content.controls[0].value,e.control.content.controls[2].value
+            db.execute('delete from ROOMS where FLOOR=? and PRICE=?',(floor,price,))
             db.commit()
-            alert.title=Text(f'FLOOR {data[0]} SUCCESSFULLY: {data[1]} FREE ROOMS FOR $.{data[2]} PER NIGHT')
+            db.close()
+            refresh('')
+        column.controls=[]
+        db=sqlite3.connect('db.db')
+        for data in db.execute('select FLOOR,count(ROOM),PRICE from ROOMS group by FLOOR,PRICE order by FLOOR,PRICE').fetchall():
+            column.controls.append(Container(content=Row([Text(data[0],width=100),Text(data[1],width=100),Text(data[2],width=100)],alignment=MainAxisAlignment.CENTER),on_click=remove))
+        db.close()
+        page.update()
+    def save(e):
+        db=sqlite3.connect('db.db')
+        if db.execute('select * from ROOMS where FLOOR=?',(t_floor.value,)).fetchall()==[]:start=1
+        else:start=len(db.execute('select * from ROOMS where FLOOR=?',(t_floor.value,)).fetchall())+1
+        for room in range(start,start+int(t_rooms.value)):
+            db.execute('insert into ROOMS values(?,?,?,?)',(t_floor.value,room,'green',t_price.value,))
+            db.commit()
+            db.execute('insert into CLEANINGS values(?,?,?,?)',(t_floor.value,room,0,0,))
+            db.commit()
+        alert.title=Text('FLOORS CORRECTLY UPDATED')
         db.close()
         page.open(alert)
-        page.update()
+        t_floor.value=t_rooms.value=t_price.value=0
+        refresh('')
     t_floor=TextField(label='FLOOR',keyboard_type=KeyboardType.NUMBER,value=0,width=100)
     t_rooms=TextField(label='ROOMS',keyboard_type=KeyboardType.NUMBER,value=0,width=100)
-    t_price=TextField(label='PRICE',keyboard_type=KeyboardType.NUMBER,value=0.0,width=100)
-    c_config=Column()
+    t_price=TextField(label='PRICE',keyboard_type=KeyboardType.NUMBER,value=0,width=100)
+    column=Column()
+    try:refresh('')
+    except:pass
     return Column([Row([Switch(on_change=theme),Text('daHotel',color='orange',size=30),IconButton(icon=Icons.EXIT_TO_APP,icon_color='red',icon_size=50,on_click=lambda _:page.go('/HOME'))],alignment=MainAxisAlignment.CENTER),
                    Divider(),
-                   Row([t_floor,t_rooms,t_price,ElevatedButton('ADD TO CONFIGURATION',on_click=add_to_config)],alignment=MainAxisAlignment.CENTER),
+                   Row([t_floor,t_rooms,t_price,ElevatedButton('SAVE',on_click=save)],alignment=MainAxisAlignment.CENTER),
                    Divider(),
                    Row([Text('ROOMS CONFIGURATION',size=20,color='orange')],alignment=MainAxisAlignment.CENTER),
                    Row([Text('FLOOR',width=100),Text('ROOMS',width=100),Text('PRICE',width=100)],alignment=MainAxisAlignment.CENTER),
-                   Row([c_config],alignment=MainAxisAlignment.CENTER),
-                   Row([ElevatedButton('SAVE',on_click=save)],alignment=MainAxisAlignment.CENTER)])
+                   Row([column],alignment=MainAxisAlignment.CENTER)])
