@@ -8,17 +8,19 @@ class UI:
         return flet.Row(controls=controls,width=width,height=height,alignment=alignment)
     def column(self,controls,width,height,scroll):
         return flet.Column(controls=controls,width=width,height=height,scroll=scroll)
+    def divider(self):
+        return flet.Divider()
+    def v_divider(self):
+        return flet.VerticalDivider()
     def switch(self,on_change):
         return flet.Switch(on_change=on_change)
     def text(self,value,size,color):
         return flet.Text(value=value,size=size,color=color)
-    def iconbutton(self,icon,size,color,on_click):
-        icon_v=getattr(flet.Icons,icon)
-        return flet.IconButton(icon=icon_v,icon_size=size,icon_color=color,on_click=on_click)
-    def divider(self):
-        return flet.Divider()
     def tf(self,label,value,width,type):
         return flet.TextField(label=label,value=value,width=width,keyboard_type=type)
     def button(self,text,color,on_click):
-        return flet.Button(content=flet.Text(text),color=color,on_click=on_click)
+        return flet.ElevatedButton(content=text,color=color,on_click=on_click)
+    def iconbutton(self,icon,size,color,on_click):
+        icon_v=getattr(flet.Icons,icon)
+        return flet.IconButton(icon=icon_v,icon_size=size,icon_color=color,on_click=on_click)
     
