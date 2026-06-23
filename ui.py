@@ -4,8 +4,8 @@ class UI:
         self.page=page
     def alert(self,title,actions):
         return flet.AlertDialog(title=flet.Text(title),actions=actions)
-    def row(self,controls,width,height,alignment):
-        return flet.Row(controls=controls,width=width,height=height,alignment=alignment)
+    def row(self,controls,width,height,alignment,scroll):
+        return flet.Row(controls=controls,width=width,height=height,alignment=alignment,scroll=scroll)
     def column(self,controls,width,height,scroll):
         return flet.Column(controls=controls,width=width,height=height,scroll=scroll)
     def divider(self):

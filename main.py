@@ -1,9 +1,11 @@
-import flet
+import flet,datetime
+date=datetime.datetime.today().strftime('%Y/%m/%d')
 from db import DB
 db=DB()
 from ui import UI
 status={'FREE':'green','OCCUPIED':'red','RESERVED':'blue','MAINTENAINCE':'orange'}
-labels=['NAME','DOC','ADDRESS','PHONE','MAIL','NOTES']
+labels=['NAME','ID','NIGHTS','ADDRESS','PHONE','MAIL','NOTES']
+widths=[200,150,100,200,150,200,175]
 def main(page:flet.Page):
     ui=UI(page)
     page.window.full_screen=True
@@ -32,48 +34,78 @@ def main(page:flet.Page):
         page.update()
     def show_room(room):
         def update(room):
-            print(room)
-            if c_room.controls[1].value:db.update(room,c_room.controls[1].value,c_room.controls[2].value)
+            if r_room.controls[1].value:
+                db.update(room,r_room.controls[1].value,r_room.controls[2].value)
+                page.show_dialog(ui.alert('ROOM CORRECTLY UPDATED',[]))
             else:page.show_dialog(ui.alert('PRICE FIELD EMPTY',[]))
             show_room(room)
         def checkin(room):
-            refresh(None)
+            name,guest_id,nights,address,phone,mail,notes=[i.value for i in r_guest.controls[:7]]
+            if all([name,guest_id,nights,address,phone,mail,notes]):
+                bill=float(nights)*db.get_room(room)[3]
+                db.checkin(room,name,guest_id,date,nights,bill,address,phone,mail,notes)
+                page.show_dialog(ui.alert('CHECKIN CORRECTLY SAVED',[]))
+            else:page.show_dialog(ui.alert('EMPTY FIELDS',[]))
+            show_room(room)
         def checkout(room):
+            db.checkout(room)
+            page.show_dialog(ui.alert('CHECKOUT CORRECTLY SAVED',[]))
             refresh(None)
+        def add_service(e):
+            service,price,notes=[i.value for i in r_service.controls[:3]]
+            if all([service,price,notes]):
+                db.add_service(date,room,service,price,notes)
+                page.show_dialog(ui.alert('SERVICE CORRECTLY SAVED',[]))
+            else:page.show_dialog('EMPTY FIELDS',[])
+            show_room(room)
         data=db.get_room(room)
-        c_room.controls=[ui.text(f'ROOM {data[1]}, {data[2]}',20,'blue'),
-                         ui.tf('PRICE PER NIGHT:',data[3],200,'number'),
+        r_room.controls=[ui.text(f'ROOM {data[1]}, {data[2]}',20,'blue'),
+                         ui.tf('PRICE PER NIGHT $.:',data[3],200,'number'),
                          ui.tf('NOTES:',data[4],200,''),
                          ui.button('UPDATE','green',lambda _,r=room:update(r))]
         if data[2]=='OCCUPIED' or data[2]=='RESERVED':
-            guest=db.get_guest(room) or ['','','','','','']
-            r_check.controls=[ui.button('CHECKOUT','green',lambda _:checkout(room))]
+            guest=db.get_booking(room)
+            r_check.controls=[ui.button('CHECKOUT','green',lambda _:checkout(room)),ui.text(f'BILL $. {db.get_bill(room)}',15,'green')]
+            r_service.controls=[ui.tf('SERVICE:','',200,''),
+                                ui.tf('PRICE $.:',0.0,100,''),
+                                ui.tf('NOTES:','',200,''),
+                                ui.iconbutton('ADD',25,'green',add_service)]
+            c_services.controls=[ui.row([ui.text(service[2:],15,'blue')],1200,30,'center','auto') for service in db.get_services(room)] or []
         else:
-            guest=['','','','','','']
+            guest=['','','','','','','']
             r_check.controls=[ui.button('CHECKIN','green',lambda _:checkin(room))]
-        c_guest.controls=[ui.tf(labels[n],guest[n],200,'') for n in range(6)]+[r_check]
+        r_guest.controls=[ui.tf(labels[n],guest[n],widths[n],'') for n in range(7)]+[r_check]
         page.update()
     def refresh(e):
+        r_room.controls.clear()
+        r_guest.controls.clear()
+        r_service.controls.clear()
+        c_services.controls.clear()
         if db.check_if_empty()==0:r_rooms.controls=[ui.text('PLEASE SET FLOORS AND ROOMS FOR FIRST TIME: --->',25,'blue'),
                                                     ui.button('SET UP','green',set_up)]
         else:
+            c_rooms.controls.clear()
             r_rooms.controls=[c_rooms]
             for floor in db.get_floors():
-                c_rooms.controls.append(ui.row([ui.text(f'FLOOR {floor[0]}',20,'blue')],1200,25,'center'))
-                c_rooms.controls.append(ui.row([ui.button(str(room[1]),status[room[2]],lambda _,r=room[1]: show_room(r)) for room in db.get_rooms(floor)],1200,25,'center'))
+                c_rooms.controls.append(ui.row([ui.text(f'FLOOR {floor[0]}',20,'blue')],1200,25,'center','auto'))
+                c_rooms.controls.append(ui.row([ui.button(str(room[1]),status[room[2]],lambda _,r=room[1]: show_room(r)) for room in db.get_rooms(floor)],1200,25,'center','auto'))
         page.update()
-    r_rooms=ui.row([],1200,300,'center')
-    c_rooms=ui.column([],1200,300,'auto')
-    c_room=ui.column([],400,275,'auto')
-    c_guest=ui.column([],400,275,'auto')
-    c_services=ui.column([],400,275,'auto')
-    r_check=ui.row([],400,50,'center')
+    r_rooms=ui.row([],1200,250,'center','auto')
+    c_rooms=ui.column([],1200,250,'auto')
+    r_room=ui.row([],1200,60,'center','auto')
+    r_guest=ui.row([],1200,80,'center','auto')
+    r_check=ui.row([],250,50,'center','auto')
+    r_service=ui.row([],1200,60,'center','auto')
+    c_services=ui.column([],1200,100,'auto')
     refresh(None)
     page.add(ui.row([ui.switch(theme),
                      ui.text('daHotel',50,'blue'),
-                     ui.iconbutton('EXIT_TO_APP',50,'red',lambda _:page.window.close())],1200,75,'center'),
+                     ui.iconbutton('EXIT_TO_APP',50,'red',lambda _:page.window.close())],1200,75,'center','auto'),
              ui.divider(),
              r_rooms,
              ui.divider(),
-             ui.row([c_room,ui.v_divider(),c_guest,ui.v_divider(),c_services],1200,275,'center'))
+             r_room,
+             r_guest,
+             r_service,
+             c_services)
 flet.run(main)

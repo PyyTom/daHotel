@@ -4,7 +4,9 @@ class DB:
         self.path=path
         with sqlite3.connect(self.path) as db:
             db.execute('create table if not exists ROOMS(FLOOR int, ROOM int, STATUS text, PRICE float, NOTES text)')
-            db.execute('create table if not exists GUESTS(ROOM,NAME,DOC,ADDRESS,PHONE,MAIL,NOTES)')
+            db.execute('create table if not exists GUESTS(NAME,ID,ADDRESS,PHONE,MAIL,NOTES)')
+            db.execute('create table if not exists BOOKINGS(ROOM,ID,DATE,NIGHTS,BILL,NOTES)')
+            db.execute('create table if not exists SERVICES(ROOM,ID,DATE,SERVICE,PRICE,NOTES)')
     def check_if_empty(self):
         with sqlite3.connect(self.path) as db:return db.execute('select count(*) from ROOMS').fetchone()[0]
     def save_set_up(self,floors,rooms,price):
@@ -20,7 +22,31 @@ class DB:
         with sqlite3.connect(self.path) as db:return db.execute('select FLOOR from ROOMS group by FLOOR').fetchall()
     def get_room(self,room):
         with sqlite3.connect(self.path) as db:return db.execute('select * from ROOMS where ROOM=?',(room,)).fetchone()
-    def get_guest(self,room):
-        with sqlite3.connect(self.path) as db:return db.execute('select * from GUESTS where ROOM=?',(room,)).fetchall()    
+    def get_guest(self,id):
+        with sqlite3.connect(self.path) as db:return db.execute('select * from GUESTS where ID=?',(id,)).fetchall()
+    def get_services(self,room):
+        with sqlite3.connect(self.path) as db:return db.execute('select * from SERVICES where ROOM=?',(room,)).fetchall()
+    def get_booking(self,room):
+        with sqlite3.connect(self.path) as db:
+            a=db.execute('select ID,NIGHTS,NOTES from BOOKINGS where ROOM=?',(room,)).fetchone()
+            b=db.execute('select NAME,ADDRESS,PHONE,MAIL from GUESTS where ID=?',(a[0],)).fetchone()
+            return [b[0],a[0],a[1],b[1],b[2],b[3],a[2]]
+    def get_bill(self,room):
+        with sqlite3.connect(self.path) as db:return db.execute('select BILL from BOOKINGS where ROOM=?',(room,)).fetchone()[0]
     def update(self,room,price,notes):
         with sqlite3.connect(self.path) as db:db.execute('update ROOMS set PRICE=?,NOTES=? where ROOM=?',(price,notes.upper(),room,))
+    def add_service(self,date,room,service,price,notes):
+        with sqlite3.connect(self.path) as db:
+            db.execute('insert into SERVICES values(?,?,?,?,?,?)',(room,'',date,service.upper(),price,notes.upper(),))
+            db.execute('update BOOKINGS set BILL=BILL+?',(price,))
+    def checkin(self,room,name,guest_id,date,nights,bill,address,phone,mail,notes):
+        with sqlite3.connect(self.path) as db:
+            db.execute('insert into BOOKINGS values(?,?,?,?,?,?)',(room,guest_id.upper(),date,nights,bill,notes.upper(),))
+            db.execute('update ROOMS set STATUS="OCCUPIED" where ROOM=?',(room,))
+            if db.execute('select * from GUESTS where ID=?',(guest_id,)).fetchall():db.execute('update GUESTS set NAME=?,ADDRESS=?,PHONE=?,MAIL=?,NOTES=? where ID=?',(name.upper(),address.upper(),phone,mail.upper(),notes.upper(),guest_id.upper(),))
+            else:db.execute('insert into GUESTS values(?,?,?,?,?,?)',(name.upper(),guest_id.upper(),address.upper(),phone,mail.upper(),notes.upper(),))
+    def checkout(self,room):
+        with sqlite3.connect(self.path) as db:
+            db.execute('update ROOMS set STATUS="FREE" where ROOM=?',(room,))
+            db.execute('delete from BOOKINGS where ROOM=?',(room,))
+            db.execute('delete from SERVICES where ROOM=?',(room,))
