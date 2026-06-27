@@ -33,16 +33,18 @@ class DB:
             return [b[0],a[0],a[1],b[1],b[2],b[3],a[2]]
     def get_bill(self,room):
         with sqlite3.connect(self.path) as db:return db.execute('select BILL from BOOKINGS where ROOM=?',(room,)).fetchone()[0]
-    def update(self,room,price,notes):
-        with sqlite3.connect(self.path) as db:db.execute('update ROOMS set PRICE=?,NOTES=? where ROOM=?',(price,notes.upper(),room,))
+    def update(self,room,status,price,notes):
+        with sqlite3.connect(self.path) as db:db.execute('update ROOMS set STATUS=?,PRICE=?,NOTES=? where ROOM=?',(status,price,notes.upper(),room,))
     def add_service(self,date,room,service,price,notes):
         with sqlite3.connect(self.path) as db:
             db.execute('insert into SERVICES values(?,?,?,?,?,?)',(room,'',date,service.upper(),price,notes.upper(),))
-            db.execute('update BOOKINGS set BILL=BILL+?',(price,))
-    def checkin(self,room,name,guest_id,date,nights,bill,address,phone,mail,notes):
+            db.execute('update BOOKINGS set BILL=BILL+? where ROOM=?',(price,room,))
+    def checkin(self,room,name,guest_id,date,nights,bill,address,phone,mail,notes,how):
+        if how=='booking':status='RESERVED'
+        else:status='OCCUPIED'
         with sqlite3.connect(self.path) as db:
             db.execute('insert into BOOKINGS values(?,?,?,?,?,?)',(room,guest_id.upper(),date,nights,bill,notes.upper(),))
-            db.execute('update ROOMS set STATUS="OCCUPIED" where ROOM=?',(room,))
+            db.execute('update ROOMS set STATUS=? where ROOM=?',(status,room,))
             if db.execute('select * from GUESTS where ID=?',(guest_id,)).fetchall():db.execute('update GUESTS set NAME=?,ADDRESS=?,PHONE=?,MAIL=?,NOTES=? where ID=?',(name.upper(),address.upper(),phone,mail.upper(),notes.upper(),guest_id.upper(),))
             else:db.execute('insert into GUESTS values(?,?,?,?,?,?)',(name.upper(),guest_id.upper(),address.upper(),phone,mail.upper(),notes.upper(),))
     def checkout(self,room):
@@ -50,3 +52,5 @@ class DB:
             db.execute('update ROOMS set STATUS="FREE" where ROOM=?',(room,))
             db.execute('delete from BOOKINGS where ROOM=?',(room,))
             db.execute('delete from SERVICES where ROOM=?',(room,))
+    def get_free_rooms(self):
+        with sqlite3.connect(self.path) as db:return db.execute('select * from ROOMS where STATUS="FREE" order by FLOOR,ROOM').fetchall()

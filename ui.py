@@ -23,4 +23,6 @@ class UI:
     def iconbutton(self,icon,size,color,on_click):
         icon_v=getattr(flet.Icons,icon)
         return flet.IconButton(icon=icon_v,icon_size=size,icon_color=color,on_click=on_click)
+    def dd(self,label,value,options,color):
+        return flet.Dropdown(label=label,value=value,options=[flet.DropdownOption(text=option) for option in options],color=color,width=200)
     

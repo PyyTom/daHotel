@@ -1,0 +1,94 @@
+<!doctype html>
+<html>
+<head>
+    <title>daHotel, Booking section</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        form { display: flex; flex-direction: column; width: 300px; gap: 10px; margin-bottom: 20px; }
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #4CAF50; color: white }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+        .b_reserve { background-color: #008CBA; color: white; border: none; padding: 5px 10px; cursor: pointer }
+        .selected-room-info { background-color: #e7f3fe; border-left: 6px solid #2196F3; padding: 10px; margin: 15px 0; width: 300px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>BOOKING SECTION</h1>
+        {% if step == 1 %}
+        <h2>SELECT DATES:</h2>
+        <form action="/search" method="POST">
+            <label for="checkin">CHECKIN:</label>
+            <input type="date" name="checkin" id="checkin" min="{{today}}" max="{{last}}" value="{{data.checkin if data else today}}" required>
+            <label for="nights">NIGHTS NUMBER:</label>
+            <input type="number" name="nights" id="nights" min="1" value="{{data.nights if data else 1}}" required>
+            <input type="submit" value="SHOW FREE ROOMS">
+        </form>
+        {% endif %}
+        {% if step == 2 %}
+        <h2>FREE ROOMS IN DATES {{ data.checkin }} ({{ data.nights }}):</h2>
+        {% if free_rooms %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>FLOOR:</th>
+                        <th>ROOM:</th>
+                        <th>PRICE PER NIGHT:</th>
+                        <th>INFO:</th>
+                        <th>?:</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for room in free_rooms %}
+                    <tr>
+                        <td>{{ room[0] }}</td>
+                        <td><strong>{{ room[1] }}</strong></td>
+                        <td>{{ room[3] }}</td>
+                        <td>{{ room[4] }}</td>
+                        <td>
+                            <form action="/select_room" method="POST" style="margin:0; width:auto;">
+                                <input type="hidden" name="checkin" value="{{data.checkin}}">
+                                <input type="hidden" name="nights" value="{{data.nights}}">
+                                <input type="hidden" name="room" value="{{room[1]}}">
+                                <input type="hidden" name="price" value="{{room[3]}}">
+                                <input type="submit" class="b_reserve" value="SELECT">
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p style="color:red;font-weight:bold;">SORRY, NO FREE ROOMS IN SELECTED DATES</p>
+            <a href="/">BACK</a>
+        {% endif %}
+        {% endif %}
+        {% if step == 3 %}
+        <h2>PERSONAL DATA:</h2>
+        <div class="selected-room-info">
+            <p><strong>RESUME:</strong> ROOM N. {{ selected_room }} FROM {{ data.checkin }} FOR {{ data.nights }} NIGHTS.</p>
+        </div>
+        <form action="/CONFIRM" method="POST">
+            <input type="hidden" name="checkin" value="{{data.checkin}}">
+            <input type="hidden" name="nights" value="{{data.nights}}">
+            <input type="hidden" name="room" value="{{selected_room}}">
+            <input type="hidden" name="price" value="{{price}}">
+            <label for="name">NAME AND SURNAME:</label>
+            <input type="text" name="name" id="name" required>
+            <label for="doc">ID DOCUMENT NUMBER:</label>
+            <input type="text" name="doc" id="doc" required>
+            <label for="address">ADDRESS:</label>
+            <input type="text" name="address" id="address" required>
+            <label for="phone">PHONE NUMBER:</label>
+            <input type="text" name="phone" id="phone" required>
+            <label for="mail">EMAIL ADDRESS:</label>
+            <input type="email" name="mail" id="mail" required>
+            <br>
+            <input type="submit" value="BOOK NOW!" style="background-color: #4CAF50; color: white; font-weight: bold; padding: 10px; cursor: pointer; border: none;">
+        </form>
+        {% endif %}
+    </div>
+</body>
+</html>

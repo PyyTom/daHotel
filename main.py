@@ -1,5 +1,5 @@
 import flet,datetime
-date=datetime.datetime.today().strftime('%Y/%m/%d')
+date=datetime.datetime.today().strftime('%Y-%m-%d')
 from db import DB
 db=DB()
 from ui import UI
@@ -34,11 +34,13 @@ def main(page:flet.Page):
         page.update()
     def show_room(room):
         def update(room):
-            if r_room.controls[1].value:
-                db.update(room,r_room.controls[1].value,r_room.controls[2].value)
+            if r_room.controls[2].value:
+                try:value=r_room.controls[1]._value
+                except:value=r_room.controls[1].text
+                db.update(room,value,r_room.controls[2].value,r_room.controls[3].value)
                 page.show_dialog(ui.alert('ROOM CORRECTLY UPDATED',[]))
             else:page.show_dialog(ui.alert('PRICE FIELD EMPTY',[]))
-            show_room(room)
+            refresh(None)
         def checkin(room):
             name,guest_id,nights,address,phone,mail,notes=[i.value for i in r_guest.controls[:7]]
             if all([name,guest_id,nights,address,phone,mail,notes]):
@@ -56,10 +58,14 @@ def main(page:flet.Page):
             if all([service,price,notes]):
                 db.add_service(date,room,service,price,notes)
                 page.show_dialog(ui.alert('SERVICE CORRECTLY SAVED',[]))
-            else:page.show_dialog('EMPTY FIELDS',[])
+            else:page.show_dialog(ui.alert('EMPTY FIELDS',[]))
             show_room(room)
         data=db.get_room(room)
-        r_room.controls=[ui.text(f'ROOM {data[1]}, {data[2]}',20,'blue'),
+        if data[2]=='FREE':x_widget=ui.dd('STATUS',data[2],['MAINTENAINCE'],'orange')
+        elif data[2]=='MAINTENAINCE':x_widget=ui.dd('STATUS',data[2],['FREE'],'green')
+        else:x_widget=ui.text(data[2],20,status[data[2]])
+        r_room.controls=[ui.text(f'ROOM {data[1]}, ',20,'blue'),
+                         x_widget,
                          ui.tf('PRICE PER NIGHT $.:',data[3],200,'number'),
                          ui.tf('NOTES:',data[4],200,''),
                          ui.button('UPDATE','green',lambda _,r=room:update(r))]
@@ -74,6 +80,8 @@ def main(page:flet.Page):
         else:
             guest=['','','','','','','']
             r_check.controls=[ui.button('CHECKIN','green',lambda _:checkin(room))]
+            r_service.controls.clear()
+            c_services.controls.clear()
         r_guest.controls=[ui.tf(labels[n],guest[n],widths[n],'') for n in range(7)]+[r_check]
         page.update()
     def refresh(e):
