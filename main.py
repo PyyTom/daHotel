@@ -35,9 +35,7 @@ def main(page:flet.Page):
     def show_room(room):
         def update(room):
             if r_room.controls[2].value:
-                try:value=r_room.controls[1]._value
-                except:value=r_room.controls[1].text
-                db.update(room,value,r_room.controls[2].value,r_room.controls[3].value)
+                db.update(room,r_room.controls[1].value,r_room.controls[2].value,r_room.controls[3].value)
                 page.show_dialog(ui.alert('ROOM CORRECTLY UPDATED',[]))
             else:page.show_dialog(ui.alert('PRICE FIELD EMPTY',[]))
             refresh(None)
@@ -45,7 +43,7 @@ def main(page:flet.Page):
             name,guest_id,nights,address,phone,mail,notes=[i.value for i in r_guest.controls[:7]]
             if all([name,guest_id,nights,address,phone,mail,notes]):
                 bill=float(nights)*db.get_room(room)[3]
-                db.checkin(room,name,guest_id,date,nights,bill,address,phone,mail,notes)
+                db.checkin(room,name,guest_id,date,nights,bill,address,phone,mail,notes,'checkin')
                 page.show_dialog(ui.alert('CHECKIN CORRECTLY SAVED',[]))
             else:page.show_dialog(ui.alert('EMPTY FIELDS',[]))
             show_room(room)
