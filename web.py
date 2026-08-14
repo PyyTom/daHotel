@@ -1,10 +1,10 @@
 from flask import Flask,render_template,request,redirect
+app=Flask(__name__)
+from db import DB
+db=DB()
 import datetime
 today=datetime.datetime.today().strftime('%Y-%m-%d')
 last=(datetime.datetime.today()+datetime.timedelta(days=30)).strftime('%Y-%m-%d')
-from db import DB
-db=DB()
-app=Flask(__name__)
 @app.route('/',methods=['GET'])
 def main():
     return render_template('index.html',today=today,last=last,step=1)

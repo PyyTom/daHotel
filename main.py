@@ -3,7 +3,7 @@ date=datetime.datetime.today().strftime('%Y-%m-%d')
 from db import DB
 db=DB()
 from ui import UI
-status={'FREE':'green','OCCUPIED':'red','RESERVED':'blue','MAINTENAINCE':'orange'}
+status={'FREE':'green','OCCUPIED':'red','RESERVED':'blue','MAINTENANCE':'orange'}
 labels=['NAME','ID','NIGHTS','ADDRESS','PHONE','MAIL','NOTES']
 widths=[200,150,100,200,150,200,175]
 def main(page:flet.Page):
@@ -46,7 +46,7 @@ def main(page:flet.Page):
                 db.checkin(room,name,guest_id,date,nights,bill,address,phone,mail,notes,'checkin')
                 page.show_dialog(ui.alert('CHECKIN CORRECTLY SAVED',[]))
             else:page.show_dialog(ui.alert('EMPTY FIELDS',[]))
-            show_room(room)
+            refresh(None)
         def checkout(room):
             db.checkout(room)
             page.show_dialog(ui.alert('CHECKOUT CORRECTLY SAVED',[]))
@@ -59,8 +59,8 @@ def main(page:flet.Page):
             else:page.show_dialog(ui.alert('EMPTY FIELDS',[]))
             show_room(room)
         data=db.get_room(room)
-        if data[2]=='FREE':x_widget=ui.dd('STATUS',data[2],['MAINTENAINCE'],'orange')
-        elif data[2]=='MAINTENAINCE':x_widget=ui.dd('STATUS',data[2],['FREE'],'green')
+        if data[2]=='FREE':x_widget=ui.dd('STATUS',data[2],['MAINTENANCE'],'orange')
+        elif data[2]=='MAINTENANCE':x_widget=ui.dd('STATUS',data[2],['FREE'],'green')
         else:x_widget=ui.text(data[2],20,status[data[2]])
         r_room.controls=[ui.text(f'ROOM {data[1]}, ',20,'blue'),
                          x_widget,
